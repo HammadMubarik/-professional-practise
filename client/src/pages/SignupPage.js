@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import "../styles/Auth.css";
 
 function SignupPage() {
   const [email, setEmail] = useState("");
@@ -17,9 +18,9 @@ function SignupPage() {
       });
 
       if (response.data.success) {
-        navigate("/"); // Redirect to login
+        navigate("/");
       } else {
-        setError("Signup failed");
+        setError(response.data.message);
       }
     } catch (err) {
       setError("Error signing up");
@@ -27,9 +28,9 @@ function SignupPage() {
   };
 
   return (
-    <div>
+    <div className="auth-container">
       <h2>Sign Up</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && <p className="error">{error}</p>}
       <form onSubmit={handleSignup}>
         <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />

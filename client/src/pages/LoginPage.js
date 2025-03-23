@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import "../styles/Auth.css";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
@@ -17,10 +18,10 @@ function LoginPage() {
       });
 
       if (response.data.success) {
-        localStorage.setItem("token", response.data.token); // Save token
-        navigate("/home"); // Redirect to home page
+        localStorage.setItem("token", response.data.token);
+        navigate("/home");
       } else {
-        setError("Invalid email or password");
+        setError(response.data.message);
       }
     } catch (err) {
       setError("Error logging in");
@@ -28,9 +29,9 @@ function LoginPage() {
   };
 
   return (
-    <div>
+    <div className="auth-container">
       <h2>Login</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && <p className="error">{error}</p>}
       <form onSubmit={handleLogin}>
         <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
