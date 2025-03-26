@@ -16,10 +16,15 @@ app.use(express.json());
 
 // MongoDB Atlas connection
 mongoose.connect(
-  "mongodb+srv://mubarikhammad:dtm82Jc9g4lwjdeZ@parking.74j5l.mongodb.net/?retryWrites=true&w=majority&appName=parking",
-  { useNewUrlParser: true, useUnifiedTopology: true }
-).then(() => console.log("Connected to MongoDB Atlas"))
-  .catch(err => console.error("MongoDB error:", err));
+  "mongodb+srv://mubarikhammad:yEmmVxoLmZlVjksX@parking.74j5l.mongodb.net/parkingApp?retryWrites=true&w=majority&appName=parking"
+).then(() => console.log("✅ Connected to MongoDB Atlas"))
+  .catch(err => console.error("❌ MongoDB error:", err));
+
+// Define static parking slots
+const allSlots = [
+  ...Array.from({ length: 50 }, (_, i) => `A${i + 1}`),
+  ...Array.from({ length: 50 }, (_, i) => `B${i + 1}`)
+];
 
 // Signup
 app.post("/signup", async (req, res) => {
@@ -51,33 +56,51 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Slots (in-memory for now)
-let slotsDB = {
-  "2025-03-20": { "08:00 AM": ["A1", "A2", "A3"], "10:00 AM": ["B1", "B2"] },
-  "2025-03-21": { "12:00 PM": ["C1", "C2", "C3"], "02:00 PM": ["D1", "D2"] }
-};
-
-app.get("/slots", (req, res) => {
+// Show available and booked slots
+app.get("/slots", async (req, res) => {
   const { date, time } = req.query;
-  const slots = slotsDB[date]?.[time] || [];
-  res.json({ slots });
-});
 
-// Book slot
-app.post("/book", async (req, res) => {
-  const { date, time, slot, userEmail } = req.body;
   try {
-    const existing = await Booking.findOne({ date, time, slot });
-    if (existing) return res.json({ success: false, message: "Slot already booked." });
-    const booking = new Booking({ userEmail, date, time, slot });
-    await booking.save();
-    if (slotsDB[date] && slotsDB[date][time]) {
-      slotsDB[date][time] = slotsDB[date][time].filter(s => s !== slot);
-    }
-    res.json({ success: true, message: `Slot ${slot} booked.` });
-  } catch (error) {
-    res.json({ success: false, message: "Booking failed." });
+    const bookings = await Booking.find({ date, time });
+    const bookedSlots = bookings.map(b => b.slot);
+    const availableSlots = allSlots.filter(slot => !bookedSlots.includes(slot));
+
+    res.json({
+      availableCount: availableSlots.length,
+      bookedCount: bookedSlots.length,
+      availableSlots,
+      bookedSlots
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Error fetching slot data" });
   }
 });
 
-app.listen(PORT, () => console.log(` Server running on http://localhost:${PORT}`));
+// Book a slot
+app.post("/book", async (req, res) => {
+  const { date, time, userEmail } = req.body;
+
+  try {
+    const bookings = await Booking.find({ date, time });
+    const bookedSlots = bookings.map(b => b.slot);
+    const availableSlot = allSlots.find(slot => !bookedSlots.includes(slot));
+
+    if (!availableSlot) {
+      return res.json({ success: false, message: "No available slots." });
+    }
+
+    const newBooking = new Booking({
+      userEmail,
+      date,
+      time,
+      slot: availableSlot
+    });
+
+    await newBooking.save();
+    res.json({ success: true, slot: availableSlot });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Booking failed" });
+  }
+});
+
+app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
