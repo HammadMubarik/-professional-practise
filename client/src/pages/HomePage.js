@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import DatePicker from "react-datepicker";
@@ -8,46 +9,58 @@ function HomePage() {
   const [selectedTime, setSelectedTime] = useState("");
   const [availableSlots, setAvailableSlots] = useState([]);
   const [bookingStatus, setBookingStatus] = useState("");
+  const [counts, setCounts] = useState({ available: 0, booked: 0 });
 
   useEffect(() => {
     if (selectedDate && selectedTime) {
-      fetchAvailableSlots();
+      fetchSlotData();
     }
   }, [selectedDate, selectedTime]);
 
-  const fetchAvailableSlots = async () => {
+  const fetchSlotData = async () => {
     try {
       const response = await axios.get("http://localhost:5000/slots", {
         params: {
           date: selectedDate.toISOString().split("T")[0],
-          time: selectedTime,
-        },
+          time: selectedTime
+        }
       });
-      setAvailableSlots(response.data.slots);
+
+      setAvailableSlots(response.data.availableSlots);
+      setCounts({
+        available: response.data.availableCount,
+        booked: response.data.bookedCount
+      });
     } catch (error) {
       console.error("Error fetching slots:", error);
     }
   };
 
-  const bookSlot = async (slot) => {
+  const bookSlot = async () => {
+    if (!selectedDate || !selectedTime) {
+      setBookingStatus("Please select both date and time before booking.");
+      return;
+    }
+  
     try {
       const response = await axios.post("http://localhost:5000/book", {
         date: selectedDate.toISOString().split("T")[0],
         time: selectedTime,
-        slot,
-        userEmail: "demo@example.com" // Later: replace with actual user email
+        userEmail: "demo@example.com" // Replace with actual user later
       });
-
+  
       if (response.data.success) {
-        setBookingStatus(`Slot ${slot} booked successfully!`);
-        fetchAvailableSlots();
+        setBookingStatus(`Slot assigned: ${response.data.slot}`);
+        fetchSlotData();
       } else {
-        setBookingStatus("Booking failed: " + response.data.message);
+        setBookingStatus(response.data.message);
       }
     } catch (error) {
-      console.error("Error booking slot:", error);
+      console.error("Booking failed:", error);
+      setBookingStatus("Booking failed due to server error.");
     }
   };
+  
 
   return (
     <div className="container">
@@ -58,7 +71,6 @@ function HomePage() {
 
       <label>Select Time:</label>
       <select value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)}>
-        <option value="">Select a time</option>
         <option value="08:00 AM">8:00 - 9:00 AM</option>
         <option value="09:00 AM">9:00 - 10:00 AM</option>
         <option value="10:00 AM">10:00 - 11:00 AM</option>
@@ -71,15 +83,14 @@ function HomePage() {
         <option value="5:00 PM">5:00 - 6:00PM</option>
       </select>
 
-      <h3>Available Slots</h3>
-      {availableSlots.length > 0 ? (
-        availableSlots.map((slot, index) => (
-          <button key={index} onClick={() => bookSlot(slot)}>{slot}</button>
-        ))
-      ) : (
-        <p>No available slots.</p>
+      {selectedDate && selectedTime && (
+        <>
+          <h4>Available Slots: {counts.available}</h4>
+          <h4>Booked Slots: {counts.booked}</h4>
+        </>
       )}
 
+      <button onClick={bookSlot}>Book Slot</button>
       {bookingStatus && <p>{bookingStatus}</p>}
     </div>
   );

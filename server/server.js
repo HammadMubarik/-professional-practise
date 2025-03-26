@@ -16,7 +16,7 @@ app.use(express.json());
 
 // MongoDB Atlas connection
 mongoose.connect(
-  "mongodb+srv://mubarikhammad:yEmmVxoLmZlVjksX@parking.74j5l.mongodb.net/parkingApp?retryWrites=true&w=majority&appName=parking"
+  "mongodb+srv://mubarikhammad:dtm82Jc9g4lwjdeZ@parking.74j5l.mongodb.net/parkingApp?retryWrites=true&w=majority&appName=parking"
 ).then(() => console.log("✅ Connected to MongoDB Atlas"))
   .catch(err => console.error("❌ MongoDB error:", err));
 
@@ -77,30 +77,52 @@ app.get("/slots", async (req, res) => {
 });
 
 // Book a slot
-app.post("/book", async (req, res) => {
-  const { date, time, userEmail } = req.body;
-
-  try {
-    const bookings = await Booking.find({ date, time });
-    const bookedSlots = bookings.map(b => b.slot);
-    const availableSlot = allSlots.find(slot => !bookedSlots.includes(slot));
-
-    if (!availableSlot) {
-      return res.json({ success: false, message: "No available slots." });
+    app.post("/book", async (req, res) => {
+    const { date, time, userEmail } = req.body;
+  
+    try {
+      // Get all booked slots for this date + time
+      const bookings = await Booking.find({ date, time });
+      const bookedSlots = bookings.map(b => b.slot);
+  
+      // All possible slots
+      const allSlots = [
+        ...Array.from({ length: 50 }, (_, i) => `A${i + 1}`),
+        ...Array.from({ length: 50 }, (_, i) => `B${i + 1}`)
+      ];
+  
+      // Find the next available slot
+      const availableSlot = allSlots.find(slot => !bookedSlots.includes(slot));
+  
+      if (!availableSlot) {
+        return res.json({ success: false, message: "No available slots." });
+      }
+  
+      // Check if this user already has a booking for the same date & time
+      const alreadyBooked = await Booking.findOne({ userEmail, date, time });
+      if (alreadyBooked) {
+        return res.json({
+          success: false,
+          message: `You already booked slot ${alreadyBooked.slot} for this time.`
+        });
+      }
+  
+      // Save the booking
+      const newBooking = new Booking({
+        userEmail,
+        date,
+        time,
+        slot: availableSlot
+      });
+  
+      await newBooking.save();
+  
+      res.json({ success: true, slot: availableSlot });
+    } catch (error) {
+      console.error("Booking failed:", error);
+      res.status(500).json({ success: false, message: "Booking failed" });
     }
-
-    const newBooking = new Booking({
-      userEmail,
-      date,
-      time,
-      slot: availableSlot
-    });
-
-    await newBooking.save();
-    res.json({ success: true, slot: availableSlot });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Booking failed" });
-  }
-});
+  });
+  
 
 app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
