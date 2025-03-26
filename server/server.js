@@ -123,6 +123,18 @@ app.get("/slots", async (req, res) => {
       res.status(500).json({ success: false, message: "Booking failed" });
     }
   });
+
+  app.get("/my-bookings", async (req, res) => {
+    const { email } = req.query;
+  
+    try {
+      const bookings = await Booking.find({ userEmail: email }).sort({ date: 1, time: 1 });
+      res.json({ success: true, bookings });
+    } catch (err) {
+      console.error("Error fetching bookings:", err);
+      res.status(500).json({ success: false, message: "Failed to fetch bookings" });
+    }
+  });
   
 
 app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));

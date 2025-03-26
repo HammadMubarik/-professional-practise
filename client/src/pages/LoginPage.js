@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +20,7 @@ function LoginPage() {
 
       if (response.data.success) {
         localStorage.setItem("token", response.data.token);
+        localStorage.setItem("userEmail", email); // store email
         navigate("/home");
       } else {
         setError(response.data.message);
