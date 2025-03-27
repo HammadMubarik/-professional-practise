@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import DatePicker from "react-datepicker";
@@ -14,6 +13,12 @@ function HomePage() {
   const [showBookings, setShowBookings] = useState(false);
 
   const userEmail = localStorage.getItem("userEmail");
+
+  const logout = () => {
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("token");
+    window.location.href = "/";
+  };
 
   useEffect(() => {
     if (selectedDate && selectedTime) {
@@ -66,23 +71,32 @@ function HomePage() {
   };
 
   const fetchMyBookings = async () => {
+    if (!userEmail) {
+      setBookingStatus("User not logged in.");
+      return;
+    }
+  
     try {
       const response = await axios.get("http://localhost:5000/my-bookings", {
         params: { email: userEmail }
       });
-
+  
       if (response.data.success) {
         setUserBookings(response.data.bookings);
         setShowBookings(true);
+      } else {
+        setBookingStatus("Could not fetch bookings.");
       }
     } catch (error) {
       console.error("Error fetching bookings:", error);
+      setBookingStatus("Failed to fetch bookings.");
     }
   };
-
+  
   return (
     <div className="container">
       <h2>Book a Parking Slot</h2>
+      <button onClick={logout} style={{ float: "right", marginBottom: "10px" }}>Logout</button>
       <p>Logged in as: <strong>{userEmail}</strong></p>
 
       <label>Select Date:</label>
@@ -90,16 +104,17 @@ function HomePage() {
 
       <label>Select Time:</label>
       <select value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)}>
-      <option value="08:00 AM">8:00 - 9:00 AM</option>
+        <option value="">-- Select a Time --</option>
+        <option value="08:00 AM">8:00 - 9:00 AM</option>
         <option value="09:00 AM">9:00 - 10:00 AM</option>
         <option value="10:00 AM">10:00 - 11:00 AM</option>
-        <option value="11:00 AM">11:00 - 12:00 AM</option>
+        <option value="11:00 AM">11:00 - 12:00 PM</option>
         <option value="12:00 PM">12:00 - 1:00 PM</option>
-        <option value="1:00 PM">1:00 - 2:00 PM </option>
-        <option value="2:00 PM">2:00 - 3:00PM</option>
-        <option value="3:00 PM">3:00 - 4:00PM</option>
-        <option value="4:00 PM">4:00 - 5:00PM</option>
-        <option value="5:00 PM">5:00 - 6:00PM</option>
+        <option value="1:00 PM">1:00 - 2:00 PM</option>
+        <option value="2:00 PM">2:00 - 3:00 PM</option>
+        <option value="3:00 PM">3:00 - 4:00 PM</option>
+        <option value="4:00 PM">4:00 - 5:00 PM</option>
+        <option value="5:00 PM">5:00 - 6:00 PM</option>
       </select>
 
       {selectedDate && selectedTime && (
@@ -110,8 +125,7 @@ function HomePage() {
       )}
 
       <button onClick={bookSlot}>Book Slot</button>
-      <button onClick={fetchMyBookings}>Show My Bookings</button>
-
+      <button onClick={fetchMyBookings} style={{ marginLeft: "10px" }}>Show My Bookings</button>
       {bookingStatus && <p>{bookingStatus}</p>}
 
       {showBookings && (

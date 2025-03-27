@@ -123,7 +123,7 @@ app.get("/slots", async (req, res) => {
       res.status(500).json({ success: false, message: "Booking failed" });
     }
   });
-
+  
   app.get("/my-bookings", async (req, res) => {
     const { email } = req.query;
   
@@ -135,6 +135,6 @@ app.get("/slots", async (req, res) => {
       res.status(500).json({ success: false, message: "Failed to fetch bookings" });
     }
   });
-  
+
 
 app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
