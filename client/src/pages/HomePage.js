@@ -6,9 +6,8 @@ import "react-datepicker/dist/react-datepicker.css";
 function HomePage() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState("");
-  const [availableSlots, setAvailableSlots] = useState([]);
-  const [bookingStatus, setBookingStatus] = useState("");
   const [counts, setCounts] = useState({ available: 0, booked: 0 });
+  const [bookingStatus, setBookingStatus] = useState("");
   const [userBookings, setUserBookings] = useState([]);
   const [showBookings, setShowBookings] = useState(false);
 
@@ -35,7 +34,6 @@ function HomePage() {
         }
       });
 
-      setAvailableSlots(response.data.availableSlots);
       setCounts({
         available: response.data.availableCount,
         booked: response.data.bookedCount
@@ -75,12 +73,12 @@ function HomePage() {
       setBookingStatus("User not logged in.");
       return;
     }
-  
+
     try {
       const response = await axios.get("http://localhost:5000/my-bookings", {
         params: { email: userEmail }
       });
-  
+
       if (response.data.success) {
         setUserBookings(response.data.bookings);
         setShowBookings(true);
@@ -92,7 +90,7 @@ function HomePage() {
       setBookingStatus("Failed to fetch bookings.");
     }
   };
-  
+
   return (
     <div className="container">
       <h2>Book a Parking Slot</h2>
@@ -100,21 +98,18 @@ function HomePage() {
       <p>Logged in as: <strong>{userEmail}</strong></p>
 
       <label>Select Date:</label>
-      <DatePicker selected={selectedDate} onChange={(date) => setSelectedDate(date)} minDate={new Date()} />
+      <DatePicker selected={selectedDate} onChange={setSelectedDate} minDate={new Date()} />
 
       <label>Select Time:</label>
       <select value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)}>
         <option value="">-- Select a Time --</option>
-        <option value="08:00 AM">8:00 - 9:00 AM</option>
-        <option value="09:00 AM">9:00 - 10:00 AM</option>
-        <option value="10:00 AM">10:00 - 11:00 AM</option>
-        <option value="11:00 AM">11:00 - 12:00 PM</option>
-        <option value="12:00 PM">12:00 - 1:00 PM</option>
-        <option value="1:00 PM">1:00 - 2:00 PM</option>
-        <option value="2:00 PM">2:00 - 3:00 PM</option>
-        <option value="3:00 PM">3:00 - 4:00 PM</option>
-        <option value="4:00 PM">4:00 - 5:00 PM</option>
-        <option value="5:00 PM">5:00 - 6:00 PM</option>
+        {[
+          "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM",
+          "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM",
+          "4:00 PM", "5:00 PM"
+        ].map((time) => (
+          <option key={time} value={time}>{time}</option>
+        ))}
       </select>
 
       {selectedDate && selectedTime && (
